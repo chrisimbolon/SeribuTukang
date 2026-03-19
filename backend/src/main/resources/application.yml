@@ -1,9 +1,9 @@
 spring:
   application:
-    name: jasapro-backend
+    name: seributukang
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/jasapro_db
+    url: jdbc:postgresql://localhost:5432/seributukang_db
     username: postgres
     password: postgres
     driver-class-name: org.postgresql.Driver
@@ -20,7 +20,7 @@ spring:
 
   web:
     resources:
-      add-mappings: false  # Disable automatic static resource mapping
+      add-mappings: false
 
 server:
   port: 8080
@@ -30,8 +30,8 @@ server:
 logging:
   level:
     root: INFO
-    com.jasapro: DEBUG
-    com.jasapro.backend.modules.provider: DEBUG
+    id.co.jasapro: DEBUG
+    id.co.jasapro.seributukang.modules.provider: DEBUG
     org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: DEBUG
     org.springframework.beans.factory.support.DefaultListableBeanFactory: DEBUG
     org.springframework.context.support.PostProcessorRegistrationDelegate: DEBUG
