@@ -1,12 +1,9 @@
 package id.co.jasapro.seributukang.modules.provider;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import id.co.jasapro.seributukang.exception.BadRequestException;
 import id.co.jasapro.seributukang.exception.ResourceNotFoundException;
-import id.co.jasapro.seributukang.modules.provider.dto.ProviderRequest;
 import id.co.jasapro.seributukang.modules.provider.dto.ProviderResponse;
 import lombok.RequiredArgsConstructor;
 
@@ -15,28 +12,6 @@ import lombok.RequiredArgsConstructor;
 public class ProviderService {
 
     private final ProviderRepository providerRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    @Transactional
-    public ProviderResponse registerProvider(ProviderRequest request) {
-        if (providerRepository.existsByEmail(request.getEmail())) {
-            throw new BadRequestException("Email already registered: " + request.getEmail());
-        }
-
-        String hashedPassword = passwordEncoder.encode(request.getPassword());
-
-        Provider provider = new Provider(
-                request.getFullName(),
-                request.getEmail(),
-                hashedPassword,
-                request.getSpecialization(),
-                request.getBio(),
-                request.getYearsOfExperience());
-
-        Provider saved = providerRepository.save(provider);
-
-        return mapToResponse(saved);
-    }
 
     @Transactional(readOnly = true)
     public ProviderResponse getProviderById(Long id) {

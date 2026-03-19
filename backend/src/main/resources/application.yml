@@ -13,7 +13,6 @@ spring:
       ddl-auto: update
     show-sql: true
     open-in-view: false
-    database-platform: org.hibernate.dialect.PostgreSQLDialect
     properties:
       hibernate:
         format_sql: true
@@ -32,10 +31,6 @@ logging:
   level:
     root: INFO
     id.co.jasapro: DEBUG
-    id.co.jasapro.seributukang.modules.provider: DEBUG
-    org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping: DEBUG
-    org.springframework.beans.factory.support.DefaultListableBeanFactory: DEBUG
-    org.springframework.context.support.PostProcessorRegistrationDelegate: DEBUG
     org.hibernate.SQL: DEBUG
 
 app:
