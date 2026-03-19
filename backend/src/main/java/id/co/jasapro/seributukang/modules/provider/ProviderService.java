@@ -8,18 +8,14 @@ import id.co.jasapro.seributukang.exception.BadRequestException;
 import id.co.jasapro.seributukang.exception.ResourceNotFoundException;
 import id.co.jasapro.seributukang.modules.provider.dto.ProviderRequest;
 import id.co.jasapro.seributukang.modules.provider.dto.ProviderResponse;
-import id.co.jasapro.seributukang.util.PasswordEncoderUtil;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class ProviderService {
 
     private final ProviderRepository providerRepository;
     private final PasswordEncoder passwordEncoder;
-
-    public ProviderService(ProviderRepository providerRepository, PasswordEncoderUtil passwordEncoderUtil) {
-        this.providerRepository = providerRepository;
-        this.passwordEncoder = passwordEncoderUtil.passwordEncoder();
-    }
 
     @Transactional
     public ProviderResponse registerProvider(ProviderRequest request) {
