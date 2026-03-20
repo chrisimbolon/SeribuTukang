@@ -10,6 +10,8 @@ public interface JobRepository extends JpaRepository<Job, Long> {
 
     List<Job> findByUserId(Long userId);
 
+    List<Job> findByUserIdAndStatus(Long userId, JobStatus status);
+
     List<Job> findByStatus(JobStatus status);
 
     List<Job> findByServiceCategoryIdAndStatus(Long serviceCategoryId, JobStatus status);

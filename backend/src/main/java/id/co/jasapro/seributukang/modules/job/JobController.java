@@ -27,16 +27,15 @@ public class JobController {
 
     private final JobService jobService;
 
+    // POST /jobs — USER creates a job
     @PostMapping
     public ResponseEntity<ApiResponse<JobResponse>> createJob(
             @Valid @RequestBody JobRequest request,
             HttpServletRequest httpRequest) {
 
-        // Extract userId from JWT (set by JwtAuthFilter)
         Long userId = (Long) httpRequest.getAttribute("userId");
         String role = (String) httpRequest.getAttribute("userRole");
 
-        // Only USERs (pemesan) can create jobs, not PROVIDERs
         if (!"USER".equals(role)) {
             throw new BadRequestException("Only users can create jobs");
         }
@@ -51,8 +50,60 @@ public class JobController {
         return ResponseEntity.status(HttpStatus.CREATED).body(apiResponse);
     }
 
+    // GET /jobs — public, list open jobs
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<JobResponse>>> listOpenJobs(
+            @RequestParam(required = false) Long serviceCategoryId) {
+
+        List<JobResponse> jobs = jobService.listOpenJobs(serviceCategoryId);
+
+        ApiResponse<List<JobResponse>> apiResponse = new ApiResponse<>();
+        apiResponse.success = true;
+        apiResponse.message = "Jobs retrieved successfully";
+        apiResponse.data = jobs;
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    // GET /jobs/my-jobs — USER sees their own jobs
+    @GetMapping("/my-jobs")
+    public ResponseEntity<ApiResponse<List<JobResponse>>> getMyJobs(
+            @RequestParam(required = false) String status,
+            HttpServletRequest httpRequest) {
+
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        String role = (String) httpRequest.getAttribute("userRole");
+
+        if (!"USER".equals(role)) {
+            throw new BadRequestException("Only users can view their jobs!");
+        }
+
+        // Parse status if provided
+        JobStatus jobStatus = null;
+        if (status != null) {
+            try {
+                jobStatus = JobStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                throw new BadRequestException(
+                        "Invalid status. Must be: OPEN, ASSIGNED, COMPLETED, CANCELLED");
+            }
+        }
+
+        List<JobResponse> jobs = jobService.getMyJobs(userId, jobStatus);
+
+        ApiResponse<List<JobResponse>> apiResponse = new ApiResponse<>();
+        apiResponse.success = true;
+        apiResponse.message = "Your jobs retrieved successfully";
+        apiResponse.data = jobs;
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    // GET /jobs/{id} — public
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<JobResponse>> getJobById(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<JobResponse>> getJobById(
+            @PathVariable Long id) {
+
         JobResponse response = jobService.getJobById(id);
 
         ApiResponse<JobResponse> apiResponse = new ApiResponse<>();
@@ -63,16 +114,48 @@ public class JobController {
         return ResponseEntity.ok(apiResponse);
     }
 
-    @GetMapping
-    public ResponseEntity<ApiResponse<List<JobResponse>>> listOpenJobs(
-            @RequestParam(name = "serviceCategoryId", required = false) Long serviceCategoryId) {
+    // POST /jobs/{id}/complete — USER marks job as done
+    @PostMapping("/{id}/complete")
+    public ResponseEntity<ApiResponse<JobResponse>> completeJob(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest) {
 
-        List<JobResponse> jobs = jobService.listOpenJobs(serviceCategoryId);
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        String role = (String) httpRequest.getAttribute("userRole");
 
-        ApiResponse<List<JobResponse>> apiResponse = new ApiResponse<>();
+        if (!"USER".equals(role)) {
+            throw new BadRequestException("Only job owners can complete jobs!");
+        }
+
+        JobResponse response = jobService.completeJob(id, userId);
+
+        ApiResponse<JobResponse> apiResponse = new ApiResponse<>();
         apiResponse.success = true;
-        apiResponse.message = "Jobs retrieved successfully";
-        apiResponse.data = jobs;
+        apiResponse.message = "Job completed! Don't forget to leave a review 🌟";
+        apiResponse.data = response;
+
+        return ResponseEntity.ok(apiResponse);
+    }
+
+    // POST /jobs/{id}/cancel — USER cancels their job
+    @PostMapping("/{id}/cancel")
+    public ResponseEntity<ApiResponse<JobResponse>> cancelJob(
+            @PathVariable Long id,
+            HttpServletRequest httpRequest) {
+
+        Long userId = (Long) httpRequest.getAttribute("userId");
+        String role = (String) httpRequest.getAttribute("userRole");
+
+        if (!"USER".equals(role)) {
+            throw new BadRequestException("Only job owners can cancel jobs!");
+        }
+
+        JobResponse response = jobService.cancelJob(id, userId);
+
+        ApiResponse<JobResponse> apiResponse = new ApiResponse<>();
+        apiResponse.success = true;
+        apiResponse.message = "Job cancelled";
+        apiResponse.data = response;
 
         return ResponseEntity.ok(apiResponse);
     }
