@@ -8,12 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import id.co.jasapro.seributukang.exception.BadRequestException;
 import id.co.jasapro.seributukang.exception.ResourceNotFoundException;
-import id.co.jasapro.seributukang.modules.job.Job;
-import id.co.jasapro.seributukang.modules.job.JobRepository;
-import id.co.jasapro.seributukang.modules.job.JobStatus;
-import id.co.jasapro.seributukang.modules.jobapplication.JobApplication;
-import id.co.jasapro.seributukang.modules.jobapplication.JobApplicationRepository;
-import id.co.jasapro.seributukang.modules.jobapplication.JobApplicationStatus;
+import id.co.jasapro.seributukang.modules.job.JobService;
+import id.co.jasapro.seributukang.modules.jobapplication.JobApplicationService;
 import id.co.jasapro.seributukang.modules.review.dto.ProviderRatingResponse;
 import id.co.jasapro.seributukang.modules.review.dto.ReviewRequest;
 import id.co.jasapro.seributukang.modules.review.dto.ReviewResponse;
@@ -24,49 +20,35 @@ import lombok.RequiredArgsConstructor;
 public class ReviewService {
 
     private final ReviewRepository reviewRepository;
-    private final JobRepository jobRepository;
-    private final JobApplicationRepository applicationRepository;
+    private final JobService jobService; // ✅ service call
+    private final JobApplicationService applicationService; // ✅ service call
 
-    // USER submits a review after job completion
     @Transactional
     public ReviewResponse createReview(Long jobId, Long userId,
             ReviewRequest request) {
 
-        // 1. Job must exist
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Job not found with id: " + jobId));
-
-        // 2. Only the job owner can review
-        if (!job.getUserId().equals(userId)) {
+        // Ask JobService — clean boundary! ✅
+        if (!jobService.isJobOwnedByUser(jobId, userId)) {
             throw new BadRequestException(
                     "You can only review jobs that you posted!");
         }
 
-        // 3. Job MUST be COMPLETED — no review without completion!
-        if (job.getStatus() != JobStatus.COMPLETED) {
+        if (!jobService.isJobCompleted(jobId)) {
             throw new BadRequestException(
-                    "You can only review COMPLETED jobs. " +
-                            "Current status: " + job.getStatus());
+                    "You can only review COMPLETED jobs. Current status: "
+                            + jobService.getJobStatus(jobId));
         }
 
-        // 4. One review per job — ever!
+        // One review per job
         reviewRepository.findByJobId(jobId).ifPresent(existing -> {
             throw new BadRequestException(
                     "You have already reviewed this job!");
         });
 
-        // 5. Find the ACCEPTED provider for this job
-        JobApplication acceptedApplication = applicationRepository
-                .findByJobIdAndStatus(jobId, JobApplicationStatus.ACCEPTED)
-                .stream()
-                .findFirst()
-                .orElseThrow(() -> new BadRequestException(
-                        "No accepted provider found for this job!"));
+        // Ask JobApplicationService — clean boundary! ✅
+        Long providerId = applicationService
+                .getAcceptedProviderForJob(jobId);
 
-        Long providerId = acceptedApplication.getProviderId();
-
-        // 6. Create the review!
         Review review = new Review(
                 jobId,
                 userId,
@@ -77,7 +59,6 @@ public class ReviewService {
         return mapToResponse(reviewRepository.save(review));
     }
 
-    // Get all reviews + rating summary for a provider (public)
     @Transactional(readOnly = true)
     public ProviderRatingResponse getProviderReviews(Long providerId) {
         List<ReviewResponse> reviews = reviewRepository
@@ -91,7 +72,6 @@ public class ReviewService {
 
         Long totalReviews = reviewRepository.countByProviderId(providerId);
 
-        // Round to 1 decimal — e.g. 4.666... → 4.7
         if (averageRating != null) {
             averageRating = Math.round(averageRating * 10.0) / 10.0;
         }
@@ -103,7 +83,6 @@ public class ReviewService {
                 reviews);
     }
 
-    // Get the review for a specific job
     @Transactional(readOnly = true)
     public ReviewResponse getReviewByJobId(Long jobId) {
         Review review = reviewRepository.findByJobId(jobId)

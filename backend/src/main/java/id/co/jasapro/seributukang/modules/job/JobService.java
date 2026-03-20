@@ -18,6 +18,54 @@ public class JobService {
 
     private final JobRepository jobRepository;
 
+    // ─────────────────────────────────────────
+    // PUBLIC API — for other modules to call
+    // ─────────────────────────────────────────
+
+    // Get raw Job entity — used by jobapplication + review modules
+    public Job getJobOrThrow(Long jobId) {
+        return jobRepository.findById(jobId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Job not found with id: " + jobId));
+    }
+
+    // Is this job OPEN? — used by jobapplication module
+    public boolean isJobOpen(Long jobId) {
+        return getJobOrThrow(jobId).getStatus() == JobStatus.OPEN;
+    }
+
+    // Is this job COMPLETED? — used by review module
+    public boolean isJobCompleted(Long jobId) {
+        return getJobOrThrow(jobId).getStatus() == JobStatus.COMPLETED;
+    }
+
+    // Does this user own this job? — used by review module
+    public boolean isJobOwnedByUser(Long jobId, Long userId) {
+        return getJobOrThrow(jobId).getUserId().equals(userId);
+    }
+
+    // Get job status — used by jobapplication module
+    public JobStatus getJobStatus(Long jobId) {
+        return getJobOrThrow(jobId).getStatus();
+    }
+
+    // Get job owner — used by jobapplication module
+    public Long getJobOwnerId(Long jobId) {
+        return getJobOrThrow(jobId).getUserId();
+    }
+
+    // Mark job as ASSIGNED — called by jobapplication module
+    @Transactional
+    public void markJobAsAssigned(Long jobId) {
+        Job job = getJobOrThrow(jobId);
+        job.setStatus(JobStatus.ASSIGNED);
+        jobRepository.save(job);
+    }
+
+    // ─────────────────────────────────────────
+    // INTERNAL — own module operations
+    // ─────────────────────────────────────────
+
     @Transactional
     public JobResponse createJob(Long userId, JobRequest request) {
         Job job = new Job(
@@ -28,16 +76,12 @@ public class JobService {
                 request.getLocation(),
                 request.getBudget(),
                 request.getScheduledAt());
-
         return mapToResponse(jobRepository.save(job));
     }
 
     @Transactional(readOnly = true)
     public JobResponse getJobById(Long id) {
-        Job job = jobRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Job not found with id: " + id));
-        return mapToResponse(job);
+        return mapToResponse(getJobOrThrow(id));
     }
 
     @Transactional(readOnly = true)
@@ -52,7 +96,6 @@ public class JobService {
         return jobs.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
-    // USER sees their own jobs — optionally filtered by status
     @Transactional(readOnly = true)
     public List<JobResponse> getMyJobs(Long userId, JobStatus status) {
         List<Job> jobs;
@@ -64,21 +107,13 @@ public class JobService {
         return jobs.stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
-    // USER marks job as COMPLETED
     @Transactional
     public JobResponse completeJob(Long jobId, Long userId) {
+        Job job = getJobOrThrow(jobId);
 
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Job not found with id: " + jobId));
-
-        // Only the job owner can complete it
         if (!job.getUserId().equals(userId)) {
-            throw new BadRequestException(
-                    "You can only complete your own jobs!");
+            throw new BadRequestException("You can only complete your own jobs!");
         }
-
-        // Job must be ASSIGNED before it can be completed
         if (job.getStatus() != JobStatus.ASSIGNED) {
             throw new BadRequestException(
                     "Only ASSIGNED jobs can be marked as completed. " +
@@ -89,26 +124,17 @@ public class JobService {
         return mapToResponse(jobRepository.save(job));
     }
 
-    // USER cancels their job
     @Transactional
     public JobResponse cancelJob(Long jobId, Long userId) {
+        Job job = getJobOrThrow(jobId);
 
-        Job job = jobRepository.findById(jobId)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Job not found with id: " + jobId));
-
-        // Only the job owner can cancel it
         if (!job.getUserId().equals(userId)) {
-            throw new BadRequestException(
-                    "You can only cancel your own jobs!");
+            throw new BadRequestException("You can only cancel your own jobs!");
         }
-
-        // Can only cancel OPEN or ASSIGNED jobs
         if (job.getStatus() == JobStatus.COMPLETED) {
             throw new BadRequestException(
                     "Cannot cancel a job that is already COMPLETED!");
         }
-
         if (job.getStatus() == JobStatus.CANCELLED) {
             throw new BadRequestException("Job is already CANCELLED!");
         }
