@@ -23,6 +23,9 @@ Thumbs.db
 /backend/target/
 !.mvn/wrapper/maven-wrapper.jar
 
+# Backend secrets
+/backend/src/main/resources/application-prod.yml
+/backend/src/main/resources/application-local.yml
 # ===========================
 # Build Output
 # ===========================
@@ -43,14 +46,22 @@ logs/
 # Environment / Secrets
 # ===========================
 .env
+.env.*
 *.env
+# Keep example files (safe to commit)
+!.env.example
+!**/.env.example
 
 # ===========================
-# Node / Frontend (future Next.js)
+# Node / Frontend (Next.js)
 # ===========================
 /frontend/node_modules/
 /frontend/.next/
 /frontend/out/
+/frontend/coverage/
+/frontend/.vercel/
+/frontend/*.tsbuildinfo
+/frontend/next-env.d.ts
 
 # ===========================
 # Others
@@ -59,4 +70,3 @@ logs/
 *.jar
 *.war
 *.ear
-
