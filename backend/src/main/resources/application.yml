@@ -18,6 +18,11 @@ spring:
         format_sql: true
         use_sql_comments: true
 
+  sql:
+    init:
+      mode: always        # ← run data.sql on every startup
+      data-locations: classpath:data.sql
+
   web:
     resources:
       add-mappings: false
