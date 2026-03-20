@@ -8,6 +8,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface JobRepository extends JpaRepository<Job, Long> {
 
+    List<Job> findByUserId(Long userId);
+
     List<Job> findByStatus(JobStatus status);
 
     List<Job> findByServiceCategoryIdAndStatus(Long serviceCategoryId, JobStatus status);

@@ -9,20 +9,18 @@ import org.springframework.transaction.annotation.Transactional;
 import id.co.jasapro.seributukang.exception.ResourceNotFoundException;
 import id.co.jasapro.seributukang.modules.job.dto.JobRequest;
 import id.co.jasapro.seributukang.modules.job.dto.JobResponse;
+import lombok.RequiredArgsConstructor;
 
 @Service
+@RequiredArgsConstructor
 public class JobService {
 
     private final JobRepository jobRepository;
 
-    public JobService(JobRepository jobRepository) {
-        this.jobRepository = jobRepository;
-    }
-
     @Transactional
-    public JobResponse createJob(JobRequest request) {
+    public JobResponse createJob(Long userId, JobRequest request) {
         Job job = new Job(
-                request.getUserId(),
+                userId, // from JWT, not request body
                 request.getServiceCategoryId(),
                 request.getTitle(),
                 request.getDescription(),

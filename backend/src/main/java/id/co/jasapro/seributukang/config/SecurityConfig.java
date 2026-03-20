@@ -2,6 +2,7 @@ package id.co.jasapro.seributukang.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -27,15 +28,29 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
-                        // Public endpoints — no token needed
+
+                        // Auth — fully public
                         .requestMatchers(
                                 "/auth/login",
                                 "/auth/register/user",
-                                "/auth/register/provider",
-                                "/providers/ping")
+                                "/auth/register/provider")
                         .permitAll()
+
+                        // Health check — public
+                        .requestMatchers("/providers/ping")
+                        .permitAll()
+
+                        // Jobs — GET is public (browse), POST requires USER token
+                        .requestMatchers(HttpMethod.GET, "/jobs", "/jobs/**")
+                        .permitAll()
+
+                        // Categories — GET is public (browse)
+                        .requestMatchers(HttpMethod.GET, "/categories", "/categories/**")
+                        .permitAll()
+
                         // Everything else requires authentication
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
