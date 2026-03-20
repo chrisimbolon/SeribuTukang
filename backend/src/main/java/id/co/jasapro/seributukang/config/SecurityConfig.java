@@ -22,44 +22,48 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
+        private final JwtAuthFilter jwtAuthFilter;
 
-    @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
-                .csrf(AbstractHttpConfigurer::disable)
-                .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .authorizeHttpRequests(auth -> auth
+        @Bean
+        public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+                http
+                                .csrf(AbstractHttpConfigurer::disable)
+                                .sessionManagement(session -> session
+                                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                                .authorizeHttpRequests(auth -> auth
 
-                        // Auth — fully public
-                        .requestMatchers(
-                                "/auth/login",
-                                "/auth/register/user",
-                                "/auth/register/provider")
-                        .permitAll()
+                                                // Auth — fully public
+                                                .requestMatchers(
+                                                                "/auth/login",
+                                                                "/auth/register/user",
+                                                                "/auth/register/provider")
+                                                .permitAll()
 
-                        // Health check — public
-                        .requestMatchers("/providers/ping")
-                        .permitAll()
+                                                // Health check — public
+                                                .requestMatchers("/providers/ping")
+                                                .permitAll()
 
-                        // Jobs — GET is public (browse), POST requires USER token
-                        .requestMatchers(HttpMethod.GET, "/jobs", "/jobs/**")
-                        .permitAll()
+                                                // Jobs — GET is public, POST requires USER token
+                                                .requestMatchers(HttpMethod.GET, "/jobs", "/jobs/**")
+                                                .permitAll()
 
-                        // Categories — GET is public (browse)
-                        .requestMatchers(HttpMethod.GET, "/categories", "/categories/**")
-                        .permitAll()
+                                                // Categories — GET is public
+                                                .requestMatchers(HttpMethod.GET, "/categories", "/categories/**")
+                                                .permitAll()
 
-                        // Everything else requires authentication
-                        .anyRequest().authenticated())
-                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                                                // Reviews — GET is public
+                                                .requestMatchers(HttpMethod.GET, "/providers/*/reviews")
+                                                .permitAll()
 
-        return http.build();
-    }
+                                                // Everything else requires authentication
+                                                .anyRequest().authenticated())
+                                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
+                return http.build();
+        }
+
+        @Bean
+        public PasswordEncoder passwordEncoder() {
+                return new BCryptPasswordEncoder();
+        }
 }
