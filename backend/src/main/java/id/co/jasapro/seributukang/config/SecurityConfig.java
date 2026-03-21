@@ -1,5 +1,7 @@
 package id.co.jasapro.seributukang.config;
 
+import java.util.List;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -12,6 +14,9 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import id.co.jasapro.seributukang.security.JwtAuthFilter;
 import lombok.RequiredArgsConstructor;
@@ -25,8 +30,30 @@ public class SecurityConfig {
         private final JwtAuthFilter jwtAuthFilter;
 
         @Bean
+        public CorsConfigurationSource corsConfigurationSource() {
+                CorsConfiguration config = new CorsConfiguration();
+
+                // Allow Next.js frontend
+                config.setAllowedOrigins(List.of("http://localhost:3000"));
+
+                // Allow all methods
+                config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+                // Allow all headers
+                config.setAllowedHeaders(List.of("*"));
+
+                // Allow JWT Authorization header
+                config.setAllowCredentials(true);
+
+                UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+                source.registerCorsConfiguration("/**", config);
+                return source;
+        }
+
+        @Bean
         public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
                 http
+                                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(AbstractHttpConfigurer::disable)
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -43,7 +70,7 @@ public class SecurityConfig {
                                                 .requestMatchers("/providers/ping")
                                                 .permitAll()
 
-                                                // Jobs — GET is public, POST requires USER token
+                                                // Jobs — GET is public
                                                 .requestMatchers(HttpMethod.GET, "/jobs", "/jobs/**")
                                                 .permitAll()
 
