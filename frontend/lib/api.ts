@@ -1,32 +1,32 @@
 import {
-    ApiResponse,
-    ApplyJobRequest,
-    AuthResponse,
-    CategoryResponse,
-    CreateJobRequest,
-    CreateReviewRequest,
-    JobApplicationResponse,
-    JobResponse,
-    LoginRequest,
-    ProviderRatingResponse,
-    RegisterProviderRequest,
-    RegisterUserRequest,
-    ReviewResponse,
+  ApiResponse,
+  ApplyJobRequest,
+  AuthResponse,
+  CategoryResponse,
+  CreateJobRequest,
+  CreateReviewRequest,
+  JobApplicationResponse,
+  JobResponse,
+  LoginRequest,
+  ProviderRatingResponse,
+  RegisterProviderRequest,
+  RegisterUserRequest,
+  ReviewResponse,
 } from '@/types';
 import apiClient from './axios';
 
 // ─────────────────────────────────────────
-// AUTH
+// AUTH — returns AuthResponse directly (no ApiResponse wrapper!)
 // ─────────────────────────────────────────
 export const authApi = {
   login: (data: LoginRequest) =>
-    apiClient.post<ApiResponse<AuthResponse>>('/auth/login', data),
+    apiClient.post<AuthResponse>('/auth/login', data),
 
   registerUser: (data: RegisterUserRequest) =>
-    apiClient.post<ApiResponse<AuthResponse>>('/auth/register/user', data),
+    apiClient.post<AuthResponse>('/auth/register/user', data),
 
   registerProvider: (data: RegisterProviderRequest) =>
-    apiClient.post<ApiResponse<AuthResponse>>('/auth/register/provider', data),
+    apiClient.post<AuthResponse>('/auth/register/provider', data),
 };
 
 // ─────────────────────────────────────────

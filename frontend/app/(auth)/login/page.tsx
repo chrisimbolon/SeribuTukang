@@ -5,7 +5,6 @@ import { useAuthStore } from '@/store/authStore';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeOff, Loader2, Wrench } from 'lucide-react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -22,7 +21,6 @@ const loginSchema = z.object({
 type LoginForm = z.infer<typeof loginSchema>;
 
 export default function LoginPage() {
-  const router = useRouter();
   const { login } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState('');
@@ -37,33 +35,31 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (data: LoginForm) => {
-    setIsLoading(true);
-    setServerError('');
+  setIsLoading(true);
+  setServerError('');
 
-    try {
-      const res = await authApi.login(data);
-      const authData = res.data.data;
+  try {
+    const res = await authApi.login(data);
+    const authData = res.data;
+    login(authData);
+    await new Promise(resolve => setTimeout(resolve, 100));
 
-      // Store in Zustand + cookies
-      login(authData);
-
-      // Redirect based on role
-      if (authData.role === 'USER') {
-        router.push('/dashboard/jobs');
-      } else {
-        router.push('/dashboard/browse');
-      }
-    } catch (err: unknown) {
-      const error = err as {
-        response?: { data?: { message?: string } }
-      };
-      setServerError(
-        error.response?.data?.message || 'Login gagal. Coba lagi!'
-      );
-    } finally {
-      setIsLoading(false);
+    if (authData.role === 'USER') {
+      window.location.href = '/dashboard/jobs';
+    } else {
+      window.location.href = '/dashboard/browse';
     }
-  };
+  } catch (err: unknown) {
+    const error = err as {
+      response?: { data?: { message?: string } }
+    };
+    setServerError(
+      error.response?.data?.message || 'Login gagal. Coba lagi!'
+    );
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen flex items-center justify-center
